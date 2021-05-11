@@ -1,3 +1,4 @@
+using AspNetCore.Middleware.Demo.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -22,8 +23,7 @@ namespace AspNetCore.Middleware.Demo
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            //  No middleware
-            //  404 for all requests
+            app.UseMiddleware<SampleMiddleware>();
         }
     }
 }
