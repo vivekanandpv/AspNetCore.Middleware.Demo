@@ -12,7 +12,9 @@ namespace AspNetCore.Middleware.Demo.Middleware
         private readonly RequestDelegate _next;
         private readonly ILogger<SampleMiddleware> _logger;
 
-        //  RequestDelegate will be provided
+        //  Class middleware can get dependency injected
+        //  RequestDelegate will be provided, in case we need it (non-terminal?)
+
         public SampleMiddleware(RequestDelegate next, ILoggerFactory loggerFactory)
         {
             this._next = next;
@@ -25,7 +27,7 @@ namespace AspNetCore.Middleware.Demo.Middleware
         {
             _logger.LogInformation("Pre-next");
 
-            await _next(context);
+            await _next(context);   //  makes non-terminal
 
             _logger.LogInformation("Post-next");
         }
