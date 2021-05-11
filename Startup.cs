@@ -22,30 +22,8 @@ namespace AspNetCore.Middleware.Demo
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            ILogger<Startup> logger = loggerFactory.CreateLogger<Startup>();
-
-            //  Non-terminal used as terminal
-            app.Use(async (context, next) => {
-                logger.LogInformation("MW1 : As terminal : Use");
-                await context.Response.WriteAsync("MW1 writes response for the incoming HTTP request");
-            });
-
-            //  Below chain will be ignored as next() is absent in MW1
-
-            app.Use(async (context, next) =>
-            {
-                logger.LogInformation("MW 2 : Non-terminal : Use : Pre-next");
-
-                await next();
-
-                logger.LogInformation("MW 2 : Non-terminal : Use : Post-next");
-            });
-
-            app.Run(async context =>
-            {
-                logger.LogInformation("MW3 : Terminal : Run");
-                await context.Response.WriteAsync("MW3 writes response for the incoming HTTP request");
-            });
+            //  No middleware
+            //  404 for all requests
         }
     }
 }
