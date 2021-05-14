@@ -55,16 +55,15 @@ namespace AspNetCore.Middleware.Demo
                     {
                         var body = "";
                         var request = ctx.Request;
-
-
-                        using (StreamReader reader
-                                  = new StreamReader(request.Body, Encoding.UTF8, true, 1024, true))
-                        {
-                            body = await reader.ReadToEndAsync();
-                        }
-
+                        
                         try
                         {
+                            using (StreamReader reader
+                                  = new StreamReader(request.Body, Encoding.UTF8, true, 1024, true))
+                            {
+                                body = await reader.ReadToEndAsync();
+                            }
+
                             var person = JsonConvert.DeserializeObject<Person>(body);
                             await ctx.Response.WriteAsync($"Read success {person.FirstName} {person.LastName}");
                         }
