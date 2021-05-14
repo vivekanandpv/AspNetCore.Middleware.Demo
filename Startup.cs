@@ -4,9 +4,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace AspNetCore.Middleware.Demo
@@ -22,42 +25,62 @@ namespace AspNetCore.Middleware.Demo
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
-            ILogger<Startup> logger = loggerFactory.CreateLogger<Startup>();
-
-            //  Middleware 1: Non-terminal
-            app.Use(async (context, next) => {
-                //  pre-next phase
-                logger.LogInformation("MW 1 : Non-terminal : Use : Pre-next");
-
-                //  call to next middleware
-                await next();
-
-                //  post-next phase
-                logger.LogInformation("MW 1 : Non-terminal : Use : Post-next");
-            });
-
-            //  Middleware 2: Non-terminal
             app.Use(async (context, next) =>
             {
-                //  pre-next phase
-                logger.LogInformation("MW 2 : Non-terminal : Use : Pre-next");
-
-                //  call to next middleware
+                context.Response.Headers.Add("content-type", "application/json");
                 await next();
-
-                //  post-next phase
-                logger.LogInformation("MW 2 : Non-terminal : Use : Post-next");
             });
 
-            //  Middleware 3: Terminal
+            app.Map("/person", a =>
+            {
+                a.MapWhen(context =>
+                context.Request.Method.ToLower() == "get",
+                config =>
+                {
+                    config.Run(async ctx =>
+                    {
+                        var person = new Person { FirstName = "Rajesh", LastName = "Nath" };
+                        var personString = JsonConvert.SerializeObject(person);
+                        await ctx.Response.WriteAsync(personString);
+                    });
+                });
+
+                a.MapWhen(context =>
+                context.Request.Method.ToLower() == "post"
+                && context.Request.Headers.ContainsKey("content-type")
+                && context.Request.Headers["content-type"] == "application/json",
+                config =>
+                {
+                    config.Run(async ctx =>
+                    {
+                        var body = "";
+                        var request = ctx.Request;
+
+
+                        using (StreamReader reader
+                                  = new StreamReader(request.Body, Encoding.UTF8, true, 1024, true))
+                        {
+                            body = await reader.ReadToEndAsync();
+                        }
+
+                        try
+                        {
+                            var person = JsonConvert.DeserializeObject<Person>(body);
+                            await ctx.Response.WriteAsync($"Read success {person.FirstName} {person.LastName}");
+                        }
+                        catch (Exception)
+                        {
+                            ctx.Response.StatusCode = 400;
+                        }
+                    });
+                });
+            });
+
             app.Run(async context =>
             {
-                //  Task of the terminal middleware is to prepare the response and thus terminate the chain
-                logger.LogInformation("MW 3 : Terminal : Run");
-                await context.Response.WriteAsync("MW3 writes response for the incoming HTTP request");
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync("Could not process...");
             });
-
-            //  Any middleware from down here, do not run as the chain is terminated
         }
     }
 }
